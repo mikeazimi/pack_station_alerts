@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { InventoryGrid } from "@/components/inventory-grid"
 import { Navigation } from "@/components/navigation"
 import { useDebounce } from "@/hooks/use-debounce"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, RefreshCw, CheckCircle } from "lucide-react"
 
 interface InventoryItem {
   location: string
@@ -23,6 +23,8 @@ export function InventoryDashboard({ apiEndpoint }: InventoryDashboardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null)
 
   // Debounce the prefix input by 300ms
   const debouncedPrefix = useDebounce(prefix, 300)
@@ -64,6 +66,43 @@ export function InventoryDashboard({ apiEndpoint }: InventoryDashboardProps) {
     fetchInventory(debouncedPrefix)
   }, [debouncedPrefix, fetchInventory])
 
+  // Manual sync trigger
+  const handleSync = async () => {
+    setIsSyncing(true)
+    setSyncResult(null)
+
+    try {
+      const response = await fetch(`/api/trigger/${apiEndpoint}`, {
+        method: "POST",
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setSyncResult({
+          success: true,
+          message: `Synced ${data.recordCount} records in ${data.duration}`,
+        })
+        // Refresh the current search if there's a prefix
+        if (prefix.trim()) {
+          fetchInventory(prefix)
+        }
+      } else {
+        setSyncResult({
+          success: false,
+          message: data.error || "Sync failed",
+        })
+      }
+    } catch (err) {
+      setSyncResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Sync failed",
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1800px] px-6 py-8">
@@ -80,11 +119,46 @@ export function InventoryDashboard({ apiEndpoint }: InventoryDashboardProps) {
           <Navigation />
         </div>
 
-        {/* Current Mode Indicator */}
-        <div className="mb-6">
+        {/* Current Mode Indicator and Sync Button */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
             {apiEndpoint === "snapshot" ? "Snapshot Mode" : "Query Mode"}
           </span>
+          
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isSyncing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Syncing from ShipHero...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                Sync Now
+              </>
+            )}
+          </button>
+
+          {syncResult && (
+            <div
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm ${
+                syncResult.success
+                  ? "bg-chart-2/10 text-chart-2"
+                  : "bg-destructive/10 text-destructive"
+              }`}
+            >
+              {syncResult.success ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
+              {syncResult.message}
+            </div>
+          )}
         </div>
 
         {/* Filter Input */}
