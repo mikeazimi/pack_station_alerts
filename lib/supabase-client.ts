@@ -75,7 +75,7 @@ export async function batchInsert(
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
     const batch = records.slice(i, i + BATCH_SIZE)
 
-    const { error, count } = await client.from(tableName).insert(batch)
+    const { error } = await client.from(tableName).insert(batch)
 
     if (error) {
       console.error(
