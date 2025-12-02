@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/snapshot",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/query",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
+
