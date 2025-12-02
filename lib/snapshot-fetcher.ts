@@ -1,6 +1,7 @@
 import axios from "axios"
 import { getShipHeroAccessToken } from "./shiphero-auth"
 import { clearTable, batchInsert, InventoryRecord } from "./supabase-client"
+import { getShipHeroCredentials } from "./settings"
 
 // Types
 interface SnapshotGenerateResponse {
@@ -204,11 +205,14 @@ export async function fetchSnapshotInventory(): Promise<{
   console.log(`[${new Date().toISOString()}] Starting snapshot inventory fetch...`)
 
   try {
-    const warehouseId = process.env.SHIPHERO_WAREHOUSE_ID
+    // Get warehouse ID from database settings
+    const credentials = await getShipHeroCredentials()
 
-    if (!warehouseId) {
-      throw new Error("Missing SHIPHERO_WAREHOUSE_ID environment variable")
+    if (!credentials?.warehouseId) {
+      throw new Error("ShipHero credentials not configured. Please enter your warehouse ID in Settings.")
     }
+
+    const warehouseId = credentials.warehouseId
 
     // Get access token
     const accessToken = await getShipHeroAccessToken()

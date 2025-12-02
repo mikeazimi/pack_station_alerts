@@ -1,4 +1,5 @@
 import axios from "axios"
+import { getShipHeroCredentials } from "./settings"
 
 // Types
 interface TokenResponse {
@@ -9,27 +10,37 @@ interface TokenResponse {
 interface TokenCache {
   accessToken: string | null
   expiresAt: number | null
+  refreshToken: string | null // Track which refresh token was used
 }
 
 // In-memory token cache
 const tokenCache: TokenCache = {
   accessToken: null,
   expiresAt: null,
+  refreshToken: null,
 }
 
 // Buffer time before token expiration to refresh (5 minutes)
 const REFRESH_BUFFER_MS = 5 * 60 * 1000
 
 /**
- * Refresh the ShipHero access token using the refresh token
+ * Refresh the ShipHero access token using the refresh token from database
  */
 async function refreshAccessToken(): Promise<string> {
   const refreshUrl = process.env.SHIPHERO_REFRESH_URL
-  const refreshToken = process.env.SHIPHERO_REFRESH_TOKEN
 
-  if (!refreshUrl || !refreshToken) {
-    throw new Error("Missing SHIPHERO_REFRESH_URL or SHIPHERO_REFRESH_TOKEN environment variables")
+  if (!refreshUrl) {
+    throw new Error("Missing SHIPHERO_REFRESH_URL environment variable")
   }
+
+  // Get refresh token from database
+  const credentials = await getShipHeroCredentials()
+
+  if (!credentials?.refreshToken) {
+    throw new Error("ShipHero credentials not configured. Please enter your refresh token and warehouse ID in Settings.")
+  }
+
+  const refreshToken = credentials.refreshToken
 
   console.log(`[${new Date().toISOString()}] Refreshing ShipHero access token...`)
 
@@ -44,8 +55,9 @@ async function refreshAccessToken(): Promise<string> {
       throw new Error("No access_token received from ShipHero auth endpoint")
     }
 
-    // Cache the token with expiration time
+    // Cache the token with expiration time and the refresh token used
     tokenCache.accessToken = access_token
+    tokenCache.refreshToken = refreshToken
     // expires_in is in seconds, convert to milliseconds and subtract buffer
     tokenCache.expiresAt = Date.now() + expires_in * 1000 - REFRESH_BUFFER_MS
 
@@ -75,11 +87,21 @@ function isTokenValid(): boolean {
 }
 
 /**
+ * Check if cached token matches current refresh token
+ */
+async function isCacheValid(): Promise<boolean> {
+  if (!isTokenValid()) return false
+  
+  const credentials = await getShipHeroCredentials()
+  return tokenCache.refreshToken === credentials?.refreshToken
+}
+
+/**
  * Get a valid ShipHero access token
  * Automatically refreshes if expired or about to expire
  */
 export async function getShipHeroAccessToken(): Promise<string> {
-  if (isTokenValid()) {
+  if (await isCacheValid()) {
     return tokenCache.accessToken!
   }
 
@@ -96,10 +118,11 @@ export async function forceRefreshToken(): Promise<string> {
 }
 
 /**
- * Clear the token cache (useful for testing)
+ * Clear the token cache (useful for testing or when credentials change)
  */
 export function clearTokenCache(): void {
   tokenCache.accessToken = null
   tokenCache.expiresAt = null
+  tokenCache.refreshToken = null
 }
 
