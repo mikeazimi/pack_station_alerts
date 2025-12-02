@@ -148,21 +148,20 @@
 }
 
 /* Custom flashing border animation for low-stock alerts */
-@keyframes pulse-border {
-  0%,
-  100% {
-    border-color: oklch(0.6 0.25 25);
-    border-width: 3px;
-    box-shadow: 0 0 0 0 oklch(0.6 0.25 25 / 0.7);
+/* 4px red border flashing at 1Hz (1 second cycle) between #ef4444 and transparent */
+@keyframes flash-border {
+  0%, 100% {
+    border-color: #ef4444;
+    box-shadow: 0 0 8px 0 rgba(239, 68, 68, 0.5);
   }
   50% {
-    border-color: oklch(0.7 0.28 25);
-    border-width: 3px;
-    box-shadow: 0 0 0 8px oklch(0.6 0.25 25 / 0);
+    border-color: transparent;
+    box-shadow: none;
   }
 }
 
-.animate-pulse-border {
-  animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.animate-flash-border {
+  animation: flash-border 1s ease-in-out infinite;
+  border-width: 4px;
   border-style: solid;
 }

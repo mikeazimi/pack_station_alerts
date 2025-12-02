@@ -14,7 +14,7 @@ export function InventoryCell({ location, sku, quantity }: InventoryCellProps) {
   const isLowStock = quantity < 5
 
   return (
-    <Card className={cn("relative p-4 transition-all", isLowStock && "animate-pulse-border")}>
+    <Card className={cn("relative p-4 transition-all", isLowStock && "animate-flash-border")}>
       {/* Location Header */}
       <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
         <Package className="h-4 w-4 text-muted-foreground" />

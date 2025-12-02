@@ -1,68 +1,61 @@
-"use client"
+import Link from "next/link"
+import { ArrowRight, Camera, Search } from "lucide-react"
 
-import { useState, useMemo } from "react"
-import { Input } from "@/components/ui/input"
-import { InventoryGrid } from "@/components/inventory-grid"
-
-// Mock inventory data - In production, this would come from an API/database
-const generateMockInventory = () => {
-  const prefixes = ["PS01", "PS02", "PS03", "RS01", "RS02"]
-  const inventory = []
-
-  for (const prefix of prefixes) {
-    for (let i = 1; i <= 15; i++) {
-      inventory.push({
-        location: `${prefix}-${i.toString().padStart(2, "0")}`,
-        sku: `SKU-${Math.floor(Math.random() * 900) + 100}-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
-        quantity: Math.floor(Math.random() * 50),
-      })
-    }
-  }
-
-  return inventory
-}
-
-export default function InventoryDashboard() {
-  const [prefix, setPrefix] = useState("")
-  const [inventory] = useState(generateMockInventory())
-
-  // Filter inventory based on prefix in real-time
-  const filteredInventory = useMemo(() => {
-    if (!prefix.trim()) {
-      return inventory
-    }
-    return inventory.filter((item) => item.location.toUpperCase().startsWith(prefix.toUpperCase()))
-  }, [prefix, inventory])
-
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[1800px] px-6 py-8">
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="mx-auto max-w-2xl px-6 py-8 text-center">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground mb-2">Real-Time Inventory Dashboard</h1>
-          <p className="text-muted-foreground">Monitor warehouse bin locations and stock levels</p>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground mb-4">
+          Real-Time Inventory Dashboard
+        </h1>
+        <p className="text-lg text-muted-foreground mb-12">
+          Monitor warehouse bin locations and stock levels in real-time
+        </p>
+
+        {/* Navigation Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Snapshot Card */}
+          <Link
+            href="/snapshot"
+            className="group relative flex flex-col items-center p-8 rounded-xl bg-card border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5"
+          >
+            <div className="rounded-full bg-primary/10 p-4 mb-4 group-hover:bg-primary/20 transition-colors">
+              <Camera className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Snapshot</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              View current inventory snapshot data
+            </p>
+            <span className="inline-flex items-center text-sm text-primary font-medium group-hover:gap-2 transition-all">
+              Open Snapshot
+              <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </Link>
+
+          {/* Query Card */}
+          <Link
+            href="/query"
+            className="group relative flex flex-col items-center p-8 rounded-xl bg-card border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5"
+          >
+            <div className="rounded-full bg-primary/10 p-4 mb-4 group-hover:bg-primary/20 transition-colors">
+              <Search className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Query</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Query real-time inventory data
+            </p>
+            <span className="inline-flex items-center text-sm text-primary font-medium group-hover:gap-2 transition-all">
+              Open Query
+              <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </Link>
         </div>
 
-        {/* Filter Input */}
-        <div className="mb-8 max-w-md">
-          <label htmlFor="prefix-filter" className="block text-sm font-medium text-foreground mb-2">
-            Filter by Location Prefix
-          </label>
-          <Input
-            id="prefix-filter"
-            type="text"
-            placeholder="e.g., PS01, RS02..."
-            value={prefix}
-            onChange={(e) => setPrefix(e.target.value)}
-            className="text-base"
-          />
-          <p className="mt-2 text-sm text-muted-foreground">
-            Showing {filteredInventory.length} location{filteredInventory.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-
-        {/* Inventory Grid */}
-        <InventoryGrid items={filteredInventory} />
+        {/* Footer Note */}
+        <p className="mt-12 text-xs text-muted-foreground">
+          Items with quantity below 5 will display a flashing red border alert
+        </p>
       </div>
     </div>
   )
